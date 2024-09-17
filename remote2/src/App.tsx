@@ -1,42 +1,40 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import "./App.css";
+import { useMicrofrontendBus } from "./hooks/useMicrofrontendBus";
 
 function App() {
   const [token, setToken] = useState();
-  const targetOrigin = "http://localhost:5000"; // Change to your parent window's origin
+
+  const hostOrigin = "http://localhost:5000";
+
+  const mfBus = useMicrofrontendBus(hostOrigin); // Use the custom useBus hook
 
   //реагируем на события извне
   useEffect(() => {
-    window.addEventListener("message", (event) => {
-      const action = JSON.parse(event.data);
+    if (!mfBus) return;
 
-      switch (action.type) {
-        case "TOKEN_CREATED":
-          setToken(action.payload.token);
-
-          break;
-
-        default:
-          break;
-      }
+    //происходит подписка ифункция возвращает функцию отписки
+    return mfBus.subscribe("TOKEN_CREATED", (action: any) => {
+      setToken(action.payload.token);
     });
   }, []);
 
   //отправка данных в родителя
   useEffect(() => {
+    if (!mfBus) return;
+
     const action = {
       type: "MENU_SENT",
-      payload: { menu: ["FRONT", "REACT", "JS"] },
+      payload: { menu: ["4444", "5555", "66666"] },
     };
-
-    window.parent.postMessage(JSON.stringify(action), targetOrigin);
+    mfBus.emit(action);
   }, []);
 
   useEffect(() => {
-    const action = {
-      type: "IFRAME-LOADED",
-    };
-    window.parent.postMessage(JSON.stringify(action), targetOrigin);
+    if (!mfBus) return;
+
+    mfBus.registerMeInHost();
   }, []);
 
   const onProductDeletedHandler = () => {
@@ -50,7 +48,7 @@ function App() {
         source: "MICROFRONT2",
       },
     };
-    window.parent.postMessage(JSON.stringify(ipcAction), "*", []);
+    mfBus.emit(ipcAction);
   };
   return (
     <>

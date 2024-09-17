@@ -1,59 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import "./App.css";
+import { useMicrofrontendBus } from "./hooks/useMicrofrontendBus";
 
-const hostOrigin = "http://localhost:5000";
 // класс шина для контроля сообщения c хостом
-class MFBus {
-  constructor(private hostOrigin: string) {
-    window.addEventListener("message", (event) => {
-      const action = JSON.parse(event.data);
-      if (this.subscribers[action.type]) {
-        this.subscribers[action.type].forEach((subscriber: any) => {
-          subscriber(action);
-        });
-      }
-    });
-  }
-
-  subscribers: any = {
-    // 'action-type': []
-  };
-
-  //подписка на iframe
-  registerMeInHost() {
-    const action = {
-      type: "IFRAME-LOADED",
-    };
-    window.parent.postMessage(JSON.stringify(action), this.hostOrigin);
-  }
-
-  // отправка экшена всем подписанным ифреймам
-  emit(action: any) {
-    window.parent.postMessage(JSON.stringify(action), this.hostOrigin);
-  }
-
-  subscribe(actionType: string, callback: any) {
-    if (!this.subscribers[actionType]) {
-      this.subscribers[actionType] = [];
-    }
-
-    this.subscribers[actionType].push(callback);
-
-    return () => {
-      this.subscribers[actionType] = this.subscribers[actionType].filter((s: any) => s !== callback);
-    };
-  }
-}
-
-const mfBus = new MFBus(hostOrigin);
 
 function App() {
   const [token, setToken] = useState();
   const [messageFromMicro2, setMessageFromMicro2] = useState("");
+  const hostOrigin = "http://localhost:5000";
+
+  const mfBus = useMicrofrontendBus(hostOrigin); // Use the custom useBus hook
 
   //реагируем на события извне
   useEffect(() => {
+    if (!mfBus) return;
+
     //происходит подписка ифункция возвращает функцию отписки
     return mfBus.subscribe("TOKEN_CREATED", (action: any) => {
       setToken(action.payload.token);
@@ -61,6 +23,8 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!mfBus) return;
+
     //происходит подписка ифункция возвращает функцию отписки
     return mfBus.subscribe("REDUX-ACTION", (action: any) => {
       switch (action.payload.originalAction.type) {
@@ -72,11 +36,15 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!mfBus) return;
+
     mfBus.registerMeInHost();
   }, []);
 
   //отправка данных в родителя
   useEffect(() => {
+    if (!mfBus) return;
+
     const action = {
       type: "MENU_SENT",
       payload: { menu: ["1", "222222", "33333"] },
