@@ -3,19 +3,23 @@ import { useEffect, useRef } from "react";
 
 // Define the MFBus class (message bus for communication with the host)
 class MFBus {
+  subscribers: any = {};
+
   constructor(private hostOrigin: string) {
     // Set up the message listener
     window.addEventListener("message", (event) => {
-      const action = JSON.parse(event.data);
-      if (this.subscribers[action.type]) {
-        this.subscribers[action.type].forEach((subscriber: any) => {
-          subscriber(action);
-        });
+      try {
+        const action = JSON.parse(event.data);
+        if (this.subscribers[action.type]) {
+          this.subscribers[action.type].forEach((subscriber: any) => {
+            subscriber(action);
+          });
+        }
+      } catch (error) {
+        console.error("Failed to parse message data:", error);
       }
     });
   }
-
-  subscribers: any = {};
 
   // Register the iframe in the host
   registerMeInHost() {
@@ -31,7 +35,7 @@ class MFBus {
   }
 
   // Subscribe to a specific action type
-  subscribe(actionType: string, callback: any) {
+  subscribe(actionType: string, callback: (action: any) => void) {
     if (!this.subscribers[actionType]) {
       this.subscribers[actionType] = [];
     }
@@ -58,6 +62,10 @@ export function useMicrofrontendBus(origin: string) {
     busRef.current?.registerMeInHost();
   }, []);
 
-  // Return the bus instance (this could be enhanced to return specific methods only)
-  return busRef.current;
+  // Return an object containing the bus methods
+  return {
+    registerMeInHost: () => busRef.current?.registerMeInHost(),
+    emit: (action: any) => busRef.current?.emit(action),
+    subscribe: (actionType: string, callback: (action: any) => void) => busRef.current?.subscribe(actionType, callback),
+  };
 }

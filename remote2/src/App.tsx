@@ -39,7 +39,7 @@ function App() {
 
   const onProductDeletedHandler = () => {
     const ipcAction = {
-      type: "REDUX-ACTION",
+      type: "STATE-ACTION",
       payload: {
         originalAction: {
           type: "CART-PRODUCT-DELETED",

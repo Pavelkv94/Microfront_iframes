@@ -14,8 +14,6 @@ function App() {
 
   //реагируем на события извне
   useEffect(() => {
-    if (!mfBus) return;
-
     //происходит подписка ифункция возвращает функцию отписки
     return mfBus.subscribe("TOKEN_CREATED", (action: any) => {
       setToken(action.payload.token);
@@ -26,7 +24,7 @@ function App() {
     if (!mfBus) return;
 
     //происходит подписка ифункция возвращает функцию отписки
-    return mfBus.subscribe("REDUX-ACTION", (action: any) => {
+    return mfBus.subscribe("STATE-ACTION", (action: any) => {
       switch (action.payload.originalAction.type) {
         case "CART-PRODUCT-DELETED": {
           setMessageFromMicro2(action.payload.originalAction.payload.productId);
@@ -49,7 +47,7 @@ function App() {
       type: "MENU_SENT",
       payload: { menu: ["1", "222222", "33333"] },
     };
-    mfBus.emit(action);
+    mfBus.sendToHost(action);
   }, []);
 
   return (

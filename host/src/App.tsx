@@ -16,10 +16,11 @@ function App() {
     };
 
     //отправляем всем подписанным микрофронтам
-    hostBus.emit(action);
+    hostBus.sendToRemote(action);
   };
 
   //реагируем на события из ифрейма
+  
   useEffect(() => {
     const messageHandler = (event: MessageEvent) => {
       if (!originsWhiteList.includes(event.origin)) {
@@ -33,12 +34,6 @@ function App() {
         switch (action.type) {
           case "MENU_SENT":
             setMenu((prev) => [...prev, ...action.payload.menu]);
-            break;
-          case "IFRAME-LOADED":
-            hostBus.registerIframe(event); // Register the iframe
-            break;
-          case "REDUX-ACTION":
-            hostBus.emit(action); // Send the action to all registered iframes
             break;
           default:
             console.warn("Unhandled action type:", action.type);
@@ -54,7 +49,7 @@ function App() {
     return () => {
       window.removeEventListener("message", messageHandler);
     };
-  }, []);
+  }, [originsWhiteList]);
 
   return (
     <div className="App">
