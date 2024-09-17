@@ -3,6 +3,7 @@ import "./App.css";
 
 function App() {
   const [token, setToken] = useState();
+  const targetOrigin = "http://localhost:5000"; // Change to your parent window's origin
 
   //реагируем на события извне
   useEffect(() => {
@@ -28,13 +29,34 @@ function App() {
       payload: { menu: ["FRONT", "REACT", "JS"] },
     };
 
-    window.parent.postMessage(JSON.stringify(action), "*", []);
+    window.parent.postMessage(JSON.stringify(action), targetOrigin);
   }, []);
 
+  useEffect(() => {
+    const action = {
+      type: "IFRAME-LOADED",
+    };
+    window.parent.postMessage(JSON.stringify(action), targetOrigin);
+  }, []);
+
+  const onProductDeletedHandler = () => {
+    const ipcAction = {
+      type: "REDUX-ACTION",
+      payload: {
+        originalAction: {
+          type: "CART-PRODUCT-DELETED",
+          payload: { productId: 121 },
+        },
+        source: "MICROFRONT2",
+      },
+    };
+    window.parent.postMessage(JSON.stringify(ipcAction), "*", []);
+  };
   return (
     <>
       <h1>REMOTE APP 2</h1>
       <p>token is {token}</p>
+      <button onClick={onProductDeletedHandler}>hello to first microfrontend</button>
     </>
   );
 }
